@@ -165,7 +165,7 @@ static void *finishedContext = @"finishedContext";
  *            the request has received response
  */
 - (FBRequest*)openUrl:(NSString *)url
-               params:(NSMutableDictionary *)params
+               params:(NSDictionary *)params
            httpMethod:(NSString *)httpMethod
              delegate:(id<FBRequestDelegate>)delegate {
     
@@ -512,18 +512,20 @@ static void *finishedContext = @"finishedContext";
  * @return FBRequest*
  *            Returns a pointer to the FBRequest object.
  */
-- (FBRequest*)requestWithParams:(NSMutableDictionary *)params
+- (FBRequest*)requestWithParams:(NSDictionary *)params
                     andDelegate:(id <FBRequestDelegate>)delegate {
-    if ([params objectForKey:@"method"] == nil) {
+    NSMutableDictionary *mutableParams = [params mutableCopy];
+	
+	if ([mutableParams objectForKey:@"method"] == nil) {
         NSLog(@"API Method must be specified");
         return nil;
     }
     
-    NSString * methodName = [params objectForKey:@"method"];
-    [params removeObjectForKey:@"method"];
+    NSString * methodName = [mutableParams objectForKey:@"method"];
+    [mutableParams removeObjectForKey:@"method"];
     
     return [self requestWithMethodName:methodName
-                             andParams:params
+                             andParams:mutableParams
                          andHttpMethod:@"GET"
                            andDelegate:delegate];
 }
@@ -551,7 +553,7 @@ static void *finishedContext = @"finishedContext";
  *            Returns a pointer to the FBRequest object.
  */
 - (FBRequest*)requestWithMethodName:(NSString *)methodName
-                          andParams:(NSMutableDictionary *)params
+                          andParams:(NSDictionary *)params
                       andHttpMethod:(NSString *)httpMethod
                         andDelegate:(id <FBRequestDelegate>)delegate {
     NSString * fullURL = [kRestserverBaseURL stringByAppendingString:methodName];
@@ -608,7 +610,7 @@ static void *finishedContext = @"finishedContext";
  *            Returns a pointer to the FBRequest object.
  */
 - (FBRequest*)requestWithGraphPath:(NSString *)graphPath
-                         andParams:(NSMutableDictionary *)params
+                         andParams:(NSDictionary *)params
                        andDelegate:(id <FBRequestDelegate>)delegate {
     
     return [self requestWithGraphPath:graphPath
@@ -647,7 +649,7 @@ static void *finishedContext = @"finishedContext";
  *            Returns a pointer to the FBRequest object.
  */
 - (FBRequest*)requestWithGraphPath:(NSString *)graphPath
-                         andParams:(NSMutableDictionary *)params
+                         andParams:(NSDictionary *)params
                      andHttpMethod:(NSString *)httpMethod
                        andDelegate:(id <FBRequestDelegate>)delegate {
     
@@ -687,23 +689,25 @@ static void *finishedContext = @"finishedContext";
  *            dialog has completed.
  */
 - (void)dialog:(NSString *)action
-     andParams:(NSMutableDictionary *)params
+     andParams:(NSDictionary *)params
    andDelegate:(id <FBDialogDelegate>)delegate {
     
+	NSMutableDictionary *mutableParams = [params copy];
+	
     [_fbDialog release];
     
     NSString *dialogURL = [kDialogBaseURL stringByAppendingString:action];
-    [params setObject:@"touch" forKey:@"display"];
-    [params setObject:kSDKVersion forKey:@"sdk"];
-    [params setObject:kRedirectURL forKey:@"redirect_uri"];
+    [mutableParams setObject:@"touch" forKey:@"display"];
+    [mutableParams setObject:kSDKVersion forKey:@"sdk"];
+    [mutableParams setObject:kRedirectURL forKey:@"redirect_uri"];
     
     if ([action isEqualToString:kLogin]) {
-        [params setObject:@"user_agent" forKey:@"type"];
-        _fbDialog = [[FBLoginDialog alloc] initWithURL:dialogURL loginParams:params delegate:self];
+        [mutableParams setObject:@"user_agent" forKey:@"type"];
+        _fbDialog = [[FBLoginDialog alloc] initWithURL:dialogURL loginParams:mutableParams delegate:self];
     } else {
-        [params setObject:_appId forKey:@"app_id"];
+        [mutableParams setObject:_appId forKey:@"app_id"];
         if ([self isSessionValid]) {
-            [params setValue:[self.accessToken stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding]
+            [mutableParams setValue:[self.accessToken stringByReplacingPercentEscapesUsingEncoding:NSUTF8StringEncoding]
                       forKey:@"access_token"];
             [self extendAccessTokenIfNeeded];
         }
@@ -717,13 +721,13 @@ static void *finishedContext = @"finishedContext";
             if (self.isFrictionlessRequestsEnabled) {
                 //  1. show the "Don't show this again for these friends" checkbox
                 //  2. if the developer is sending a targeted request, then skip the loading screen
-                [params setValue:@"1" forKey:@"frictionless"];	
+                [mutableParams setValue:@"1" forKey:@"frictionless"];	
                 //  3. request the frictionless recipient list encoded in the success url
-                [params setValue:@"1" forKey:@"get_frictionless_recipients"];
+                [mutableParams setValue:@"1" forKey:@"get_frictionless_recipients"];
             }
 
             // set invisible if all recipients are enabled for frictionless requests
-            id fbid = [params objectForKey:@"to"];
+            id fbid = [mutableParams objectForKey:@"to"];
             if (fbid != nil) {
                 // if value parses as a json array expression get the list that way
                 SBJsonParser *parser = [[[SBJsonParser alloc] init] autorelease];
@@ -737,7 +741,7 @@ static void *finishedContext = @"finishedContext";
         }
         
         _fbDialog = [[FBDialog alloc] initWithURL:dialogURL
-                                           params:params
+                                           params:mutableParams
                                   isViewInvisible:invisible
                              frictionlessSettings:_frictionlessRequestSettings 
                                          delegate:delegate];

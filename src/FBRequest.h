@@ -34,7 +34,7 @@ typedef NSUInteger FBRequestState;
     id<FBRequestDelegate> _delegate;
     NSString*             _url;
     NSString*             _httpMethod;
-    NSMutableDictionary*  _params;
+    NSDictionary*         _params;
     NSURLConnection*      _connection;
     NSMutableData*        _responseText;
     FBRequestState        _state;
@@ -61,7 +61,7 @@ typedef NSUInteger FBRequestState;
  * These values in the dictionary will be converted to strings using the
  * standard Objective-C object-to-string conversion facilities.
  */
-@property(nonatomic,retain) NSMutableDictionary* params;
+@property(nonatomic,retain) NSDictionary* params;
 @property(nonatomic,retain) NSURLConnection*  connection;
 @property(nonatomic,retain) NSMutableData* responseText;
 @property(nonatomic,readonly) FBRequestState state;
@@ -80,7 +80,7 @@ typedef NSUInteger FBRequestState;
                    params:(NSDictionary *)params
                httpMethod:(NSString *)httpMethod;
 
-+ (FBRequest*)getRequestWithParams:(NSMutableDictionary *) params
++ (FBRequest*)getRequestWithParams:(NSDictionary *) params
                         httpMethod:(NSString *) httpMethod
                           delegate:(id<FBRequestDelegate>)delegate
                         requestURL:(NSString *) url;
