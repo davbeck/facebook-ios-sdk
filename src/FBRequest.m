@@ -15,7 +15,6 @@
  */
 
 #import "FBRequest.h"
-#import "JSON.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // global
@@ -186,12 +185,16 @@ static const NSTimeInterval kTimeoutInterval = 180.0;
  */
 - (id)parseJsonResponse:(NSData *)data error:(NSError **)error {
     
-    NSString* responseString = [[[NSString alloc] initWithData:data
-                                                      encoding:NSUTF8StringEncoding]
-                                autorelease];
-    if ([responseString isEqualToString:@"true"]) {
-        return [NSDictionary dictionaryWithObject:@"true" forKey:@"result"];
-    } else if ([responseString isEqualToString:@"false"]) {
+    id result = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:NULL];
+
+    
+    if (result == nil) {
+        return [[[NSString alloc] initWithData:data
+                                      encoding:NSUTF8StringEncoding] autorelease];
+    }
+    
+    
+    if ([result isKindOfClass:[NSNumber class]] && [[NSNumber numberWithBool:NO] isEqualToNumber:result]) {
         if (error != nil) {
             *error = [self formError:kGeneralErrorCode
                             userInfo:[NSDictionary
@@ -201,14 +204,6 @@ static const NSTimeInterval kTimeoutInterval = 180.0;
         return nil;
     }
     
-    
-    SBJSON *jsonParser = [[SBJSON alloc] init];
-    id result = [jsonParser objectWithString:responseString];
-    [jsonParser release];
-
-    if (result == nil) {
-        return responseString;
-    }
 
     if ([result isKindOfClass:[NSDictionary class]]) {
         if ([result objectForKey:@"error"] != nil) {
